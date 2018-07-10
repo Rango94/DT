@@ -140,9 +140,9 @@ class Tree:
 def fur(q,w,e,r,t,y,u,i,o,p):
     return q*q*q*0.4+w*w*0.1+e*0.2+r*r*r*r*-0.7+t+y*y*0.9+u*u*u*0.4+i*0.5+o*0.4*i*p*0.3+p*p
 
-# x=[]
-# y=[]
-# for k in range(4000):
+x=[]
+y=[]
+for k in range(4000):
 #     q=rd.random()*2-1
 #     w = rd.random() * 2 - 1
 #     e = rd.random() * 2 - 1
