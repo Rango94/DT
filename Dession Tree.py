@@ -1,6 +1,7 @@
 #最小二乘
 import random as rd
 import numpy as np
+import json
 class DessionTree:
 
     def __init__(self,max_deep=6):
@@ -21,7 +22,7 @@ class DessionTree:
             y_r = []
             for i in range(self.feature_len):
                 # print(i)
-                feature_sort = self.sort(X[:, i])
+                feature_sort = [np.min(X[:, i]),np.max(X[:,i])]
                 # split_point = [(feature_sort[idx] + feature_sort[idx + 1]) / 2 for idx, i in enumerate(feature_sort) if
                 #                idx != len(feature_sort) - 1]
                 split_point=[feature_sort[0]+k*(feature_sort[len(feature_sort)-1]-feature_sort[0])/20 for k in range(20)]
@@ -97,28 +98,52 @@ class DessionTree:
             out.append(self.tree.get(i))
         return np.array(out)
 
-    # def save_model(self):
+    def save_model(self,modelname):
+        with open(modelname,'w',encoding='utf-8') as fo:
+            json.dump(self.tree.get_dic(), fo, ensure_ascii=False)
+
+    def load_model(self,modelname):
+        with open(modelname,'r',encoding='utf-8') as fo:
+            self.tree=Tree(dic=json.load(fo))
 
 
 class Tree:
-    def __init__(self,deep):
-        self.deep=deep
-        self.idx=0
-        self.point=0
-        self.value=0
-        self.end=False
-        self.value_x=[]
-        self.value_y=[]
+    def __init__(self,deep=0,dic=0):
+        if dic==0:
+            self.deep=deep
+            self.idx=0
+            self.point=0
+            self.value=0
+            self.end=False
+            self.value_x=[]
+            self.value_y=[]
+        else:
+            # print(dic['end'])
+            if dic['end'] == False:
+                self.deep = dic['deep']
+                self.idx = dic['idx']
+                self.point = dic['point']
+                self.end = dic['end']
+                self.value = dic['value']
+                self.left_node=Tree(dic=dic['left'])
+                self.right_node = Tree(dic=dic['right'])
+            else:
+                self.deep = dic['deep']
+                self.idx = dic['idx']
+                self.point = dic['point']
+                self.end = dic['end']
+                self.value = dic['value']
+                self.left_node = dic['left']
+                self.right_node = dic['right']
+
     def get(self,x):
         if self.end==True:
-            print(self.value_x)
-            # print(self.value_y)
             return self.value
         elif x[self.idx]<self.point:
-            print('xiao',self.idx,x[self.idx],self.point)
+            # print('xiao',self.idx,x[self.idx],self.point)
             return self.left_node.get(x)
         elif x[self.idx]>=self.point:
-            print('da',self.idx,x[self.idx], self.point)
+            # print('da',self.idx,x[self.idx], self.point)
             return self.right_node.get(x)
 
     def set_node(self,l_or_r,node):
@@ -131,6 +156,31 @@ class Tree:
         self.value=value
         self.end=True
 
+    def get_dic(self):
+        if self.end:
+            out = {
+                'deep': self.deep,
+                'idx': self.idx,
+                'point': self.point,
+                'end': self.end,
+                'value': self.value,
+                'left': 0,
+                'right': 0
+            }
+        else:
+            out={
+                'deep':self.deep,
+                'idx':self.idx,
+                'point':self.point,
+                'end':self.end,
+                'value':self.value,
+                'left':self.left_node.get_dic(),
+                'right':self.right_node.get_dic()
+            }
+        return out
+
+
+
 # dd=DessionTree()
 # feature_sort=dd.sort(np.array([0,0,7,21,8,101,101,101,101,68,3,6]))
 # print(dd.sort(np.array([0,0,7,21,8,101,101,101,101,68,3,6])))
@@ -142,36 +192,41 @@ def fur(q,w,e,r,t,y,u,i,o,p):
 
 x=[]
 y=[]
-for k in range(4000):
-#     q=rd.random()*2-1
-#     w = rd.random() * 2 - 1
-#     e = rd.random() * 2 - 1
-#     r = rd.random() * 2 - 1
-#     t = rd.random() * 2 - 1
-#     y_ = rd.random() * 2 - 1
-#     u = rd.random() * 2 - 1
-#     i = rd.random() * 2 - 1
-#     o = rd.random() * 2 - 1
-#     p = rd.random() * 2 - 1
-#     x.append(np.array([q,w,e,r,t,y_,u,i,o,p]))
-#     y.append(fur(q,w,e,r,t,y_,u,i,o,p))
-#
-# np.save('X',np.array(x))
-# np.save('Y',np.array(y))
+for k in range(20000):
+    q=rd.random()*2-1
+    w = rd.random() * 2 - 1
+    e = rd.random() * 2 - 1
+    r = rd.random() * 2 - 1
+    t = rd.random() * 2 - 1
+    y_ = rd.random() * 2 - 1
+    u = rd.random() * 2 - 1
+    i = rd.random() * 2 - 1
+    o = rd.random() * 2 - 1
+    p = rd.random() * 2 - 1
+    x.append(np.array([q,w,e,r,t,y_,u,i,o,p]))
+    y.append(fur(q,w,e,r,t,y_,u,i,o,p))
 
+np.save('X',np.array(x))
+np.save('Y',np.array(y))
+#
+# print('done')
 X=np.load('X.npy')
 Y=np.load('Y.npy')
-
-x=X[:100]
+#
+x=X[:1000]
 #print(X[:100],Y[:1])
-dd=DessionTree(100)
+dd=DessionTree(15)
 # dd.fit(X[100:],Y[100:])
-dd.fit(X,Y)
+dd.fit(X[1000:],Y[1000:])
+dd.save_model('model')
+
+dd1=DessionTree()
+dd1.load_model('model')
 # print(x)
-y=dd.predict(x)
+y=dd1.predict(x)
 for idx,i in enumerate(y):
     print(i,Y[idx])
-print(np.mean((y-Y[:100])*(y-Y[:100])))
+print(np.mean((y-Y[:1000])*(y-Y[:1000])))
 
 
 
