@@ -2,12 +2,29 @@
 import random as rd
 import numpy as np
 import json
+import math
+
 class DessionTree:
 
-    def __init__(self,max_deep=6):
+    def __init__(self,data_cate,cate='val',max_deep=6):
         self.max_deep=max_deep
+        self.data_cate=data_cate
+        self.cate=cate
         self.tree = Tree(0)
     def fit(self,X,Y):
+        if self.data_cate=='Con' and self.cate!='val':
+            max_=np.max(Y)
+            min_=np.min(Y)
+            step=(max_-min_)/100
+            dic={}
+
+            for i in range(100):
+                dic[i]=[min_+step*i,min_+step*(i+1)]
+            for idx,i in enumerate(Y):
+                for key in dic:
+                    if i<=dic[key][1] and i>dic[key][0]:
+                        Y[idx]=dic[key][0]
+            print(Y)
         self.Split(self.tree,X,Y)
 
     def Split(self,tree,X,Y):
@@ -25,10 +42,10 @@ class DessionTree:
                 feature_sort = [np.min(X[:, i]),np.max(X[:,i])]
                 # split_point = [(feature_sort[idx] + feature_sort[idx + 1]) / 2 for idx, i in enumerate(feature_sort) if
                 #                idx != len(feature_sort) - 1]
-                split_point=[feature_sort[0]+k*(feature_sort[len(feature_sort)-1]-feature_sort[0])/20 for k in range(20)]
+                split_point=[feature_sort[0]+k*(feature_sort[len(feature_sort)-1]-feature_sort[0])/50 for k in range(50)]
 
                 for p in split_point:
-                    now_s ,x1,y1,x2,y2= self.mini_2(X, Y, i, p)
+                    now_s ,x1,y1,x2,y2= self.cont(X, Y, i, p)
                     if best_s > now_s:
                         best_s = now_s
                         best_idx = i
@@ -50,7 +67,7 @@ class DessionTree:
             tree.value_y=Y
         return tree
 
-    def mini_2(self,x,y,IDX,point):
+    def cont(self, x, y, IDX, point):
         left_y=[]
         right_y=[]
         left_x=[]
@@ -66,7 +83,23 @@ class DessionTree:
         r_mean=np.mean(right_y)
         #print(l_mean,r_mean)
         # print(left_y)
-        return sum([(i-l_mean)*(i-l_mean) for i in left_y])+sum([(i-r_mean)*(i-r_mean) for i in right_y]),np.array(left_x),np.array(left_y),np.array(right_x),np.array(right_y)
+        if self.cate=='val':
+            return sum([(i-l_mean)*(i-l_mean) for i in left_y])+sum([(i-r_mean)*(i-r_mean) for i in right_y]),np.array(left_x),np.array(left_y),np.array(right_x),np.array(right_y)
+        if self.cate=='id3':
+            return self.Entropy(y)-len(left_y)/len(y)*self.Entropy(left_y)+len(right_y)/len(y)*self.Entropy(right_y),np.array(left_x),np.array(left_y),np.array(right_x),np.array(right_y)
+        if self.cate=='c4.4':
+            E=self.Entropy(y)
+            return (E-len(left_y)/len(y)*self.Entropy(left_y)+len(right_y)/len(y)*self.Entropy(right_y))/E,np.array(left_x),np.array(left_y),np.array(right_x),np.array(right_y)
+
+    def Entropy(self,y):
+        dic = {}
+        for i in y:
+            try:
+                dic[i]+=1
+            except:
+                dic[i]=1
+        total=sum([dic[i] for i in dic])
+        return -sum([(dic[i]/total)*math.log(dic[i]/total) for i in dic])
 
     def sort(self,x):
         if len(x)>1:
