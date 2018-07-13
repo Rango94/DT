@@ -1,25 +1,26 @@
-from DessionTree import DessionTree
+from Dession_Tree import DessionTree
+import Dession_Tree
 import numpy as np
 import json
 
 class GBDT:
     def __init__(self,max_trees=6,max_deep=6,cate='val'):
-        self.tree_dic={}
+        self.trees_dic={}
         self.max_trees=max_trees
         self.max_deep=max_deep
         for i in range(max_trees):
-            self.tree_dic[i]=DessionTree(cate=cate,max_deep=max_deep)
+            self.trees_dic[i]=DessionTree(cate=cate, max_deep=max_deep)
 
     def fit(self,X,Y):
         for i in range(self.max_trees):
             print('training NO.'+str(i)+' tree')
-            self.tree_dic[i].fit(X,Y)
-            Y-=self.tree_dic[i].predict(X)
+            self.trees_dic[i].fit(X, Y)
+            Y-=self.trees_dic[i].predict(X)
 
     def predict(self,X):
         out=np.zeros(len(X))
         for i in range(self.max_trees):
-            out+=self.tree_dic[i].predict(X)
+            out+=self.trees_dic[i].predict(X)
         return out
 
     def save_model(self,modelname):
@@ -32,18 +33,17 @@ class GBDT:
         for key in tmp_dic:
             dt=DessionTree()
             dt.load_model_by_dic(tmp_dic[key])
-            self.tree_dic[int(key)]=dt
+            self.trees_dic[int(key)]=dt
 
         self.max_trees=len(tmp_dic)
 
     def get_dic(self):
         out_dic={}
-        for key in self.tree_dic:
-            out_dic[key]=self.tree_dic[key].tree.get_dic()
+        for key in self.trees_dic:
+            out_dic[key]=self.trees_dic[key].tree.get_dic()
         return out_dic
 if __name__ == '__main__':
-
-    # genaret_data(5000)
+    Dession_Tree.genaret_data(20000)
 
     X = np.load('X.npy')
     Y = np.load('Y.npy')
