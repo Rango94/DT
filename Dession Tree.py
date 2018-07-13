@@ -6,26 +6,42 @@ import math
 
 class DessionTree:
 
-    def __init__(self,data_cate,cate='val',max_deep=6):
+    def __init__(self,data_cate='con',cate='val',max_deep=6):
         self.max_deep=max_deep
         self.data_cate=data_cate
         self.cate=cate
         self.tree = Tree(0)
-    def fit(self,X,Y):
-        if self.data_cate=='Con' and self.cate!='val':
-            max_=np.max(Y)
-            min_=np.min(Y)
-            step=(max_-min_)/100
-            dic={}
+        self.Dic=0
 
-            for i in range(100):
-                dic[i]=[min_+step*i,min_+step*(i+1)]
-            for idx,i in enumerate(Y):
-                for key in dic:
-                    if i<=dic[key][1] and i>dic[key][0]:
-                        Y[idx]=dic[key][0]
-            print(Y)
+    def fit(self,X,Y):
+        if self.data_cate=='con' and self.cate!='val':
+            Y=self.dis_the_con(Y)
         self.Split(self.tree,X,Y)
+
+    def dis_the_con(self,Y):
+        max_ = np.max(Y)
+        min_ = np.min(Y)
+        step = (max_ - min_) / 200
+        print(max_,min_)
+        self.Dic = {}
+        for i in range(200):
+            self.Dic[i] = [min_ + step * i, min_ + step * (i + 1)]
+        for idx, i in enumerate(Y):
+            if i <= self.Dic[0][0]:
+                Y[idx] = self.Dic[0][0]
+            elif i > self.Dic[len(self.Dic) - 1][1]:
+                Y[idx] = self.Dic[len(self.Dic) - 1][1]
+            else:
+                for key in self.Dic:
+                    if i <= self.Dic[key][1] and i > self.Dic[key][0]:
+                        # print(Y[idx],end='\t')
+                        Y[idx] = self.Dic[key][0]
+                        # print(Y[idx])
+
+        # for i in Y:
+            # print(i)
+
+        return Y
 
     def Split(self,tree,X,Y):
         if tree.deep<=self.max_deep and np.var(Y)!=0 and X!=[]:
@@ -45,7 +61,10 @@ class DessionTree:
                 split_point=[feature_sort[0]+k*(feature_sort[len(feature_sort)-1]-feature_sort[0])/50 for k in range(50)]
 
                 for p in split_point:
-                    now_s ,x1,y1,x2,y2= self.cont(X, Y, i, p)
+                    try:
+                        now_s ,x1,y1,x2,y2= self.cont(X, Y, i, p)
+                    except:
+                        now_s=best_s
                     if best_s > now_s:
                         best_s = now_s
                         best_idx = i
@@ -79,17 +98,19 @@ class DessionTree:
             else:
                 right_y.append(y[idx])
                 right_x.append(i)
-        l_mean=np.mean(left_y)
-        r_mean=np.mean(right_y)
         #print(l_mean,r_mean)
         # print(left_y)
+        if len(right_y)==0 or len(left_y)==0:
+            return 0
         if self.cate=='val':
+            l_mean = np.mean(left_y)
+            r_mean = np.mean(right_y)
             return sum([(i-l_mean)*(i-l_mean) for i in left_y])+sum([(i-r_mean)*(i-r_mean) for i in right_y]),np.array(left_x),np.array(left_y),np.array(right_x),np.array(right_y)
         if self.cate=='id3':
-            return self.Entropy(y)-len(left_y)/len(y)*self.Entropy(left_y)+len(right_y)/len(y)*self.Entropy(right_y),np.array(left_x),np.array(left_y),np.array(right_x),np.array(right_y)
+            return -(self.Entropy(y)-((len(left_y)/len(y))*self.Entropy(left_y)+(len(right_y)/len(y))*self.Entropy(right_y))),np.array(left_x),np.array(left_y),np.array(right_x),np.array(right_y)
         if self.cate=='c4.4':
             E=self.Entropy(y)
-            return (E-len(left_y)/len(y)*self.Entropy(left_y)+len(right_y)/len(y)*self.Entropy(right_y))/E,np.array(left_x),np.array(left_y),np.array(right_x),np.array(right_y)
+            return -((E-(len(left_y)/len(y)*self.Entropy(left_y)+len(right_y)/len(y)*self.Entropy(right_y)))/E),np.array(left_x),np.array(left_y),np.array(right_x),np.array(right_y)
 
     def Entropy(self,y):
         dic = {}
@@ -122,6 +143,7 @@ class DessionTree:
         return x
 
     def predict(self,X):
+
         try:
             X=np.reshape(X,(-1,len(X[0])))
         except:
@@ -133,11 +155,15 @@ class DessionTree:
 
     def save_model(self,modelname):
         with open(modelname,'w',encoding='utf-8') as fo:
-            json.dump(self.tree.get_dic(), fo, ensure_ascii=False)
+            model={
+                'tree':self.tree.get_dic(),
+            }
+            json.dump(model, fo, ensure_ascii=False)
 
     def load_model(self,modelname):
         with open(modelname,'r',encoding='utf-8') as fo:
-            self.tree=Tree(dic=json.load(fo))
+            model=json.load(fo)
+            self.tree=Tree(dic=model['tree'])
 
 
 class Tree:
@@ -173,10 +199,10 @@ class Tree:
         if self.end==True:
             return self.value
         elif x[self.idx]<self.point:
-            # print('xiao',self.idx,x[self.idx],self.point)
+            print('xiao',self.idx,x[self.idx],self.point)
             return self.left_node.get(x)
         elif x[self.idx]>=self.point:
-            # print('da',self.idx,x[self.idx], self.point)
+            print('da',self.idx,x[self.idx], self.point)
             return self.right_node.get(x)
 
     def set_node(self,l_or_r,node):
@@ -225,7 +251,7 @@ def fur(q,w,e,r,t,y,u,i,o,p):
 
 x=[]
 y=[]
-for k in range(20000):
+for k in range(5000):
     q=rd.random()*2-1
     w = rd.random() * 2 - 1
     e = rd.random() * 2 - 1
@@ -241,25 +267,25 @@ for k in range(20000):
 
 np.save('X',np.array(x))
 np.save('Y',np.array(y))
-#
-# print('done')
+
+print('done')
+
 X=np.load('X.npy')
 Y=np.load('Y.npy')
-#
 x=X[:1000]
-#print(X[:100],Y[:1])
-dd=DessionTree(15)
-# dd.fit(X[100:],Y[100:])
+dd=DessionTree('con',max_deep=15,cate='id3')
+
 dd.fit(X[1000:],Y[1000:])
-dd.save_model('model')
+# dd.save_model('model')
 
 dd1=DessionTree()
-dd1.load_model('model')
-# print(x)
-y=dd1.predict(x)
+dd1.load_model('model.id3')
+
+y=dd1.predict(x[0])
+print(x[0])
 for idx,i in enumerate(y):
     print(i,Y[idx])
-print(np.mean((y-Y[:1000])*(y-Y[:1000])))
+# print(np.mean((y-Y[:1000])*(y-Y[:1000])))
 
 
 
