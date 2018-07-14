@@ -1,5 +1,4 @@
 from Dession_Tree import DessionTree
-import Dession_Tree
 import numpy as np
 import json
 
@@ -43,7 +42,6 @@ class GBDT:
             out_dic[key]=self.trees_dic[key].tree.get_dic()
         return out_dic
 if __name__ == '__main__':
-    Dession_Tree.genaret_data(20000)
 
     X = np.load('X.npy')
     Y = np.load('Y.npy')
@@ -58,7 +56,7 @@ if __name__ == '__main__':
     if cate != 'val' and cate != 'id3' and cate != 'c4.4':
         print('cate error')
     else:
-        if not os.path.exists('GBDTmodel.' + cate):
+        if not os.path.exists('GBDTmodel.' + cate) or (len(sys.argv)==3 and sys.argv[2]=='force'):
             dd = GBDT(max_trees=6, max_deep=6, cate=cate)
             dd.fit(x_train, y_train)
             dd.save_model('GBDTmodel.' + cate)

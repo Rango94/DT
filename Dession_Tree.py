@@ -251,37 +251,7 @@ class Tree:
 # print([(feature_sort[idx]+feature_sort[idx+1])/2 for idx,i in enumerate(feature_sort) if idx!=len(feature_sort)-1])
 
 
-def fur(q,w,e,r,t,y,u,i,o,p):
-    return q*q*q*0.4+w*w*0.1+e*0.2+r*r*r*r*-0.7+t+y*y*0.9+u*u*u*0.4+i*0.5+o*0.4*i*p*0.3+p*p
-
-
-
-def genaret_data(num):
-    x=[]
-    y=[]
-    for k in range(num):
-        q=rd.random()*2-1
-        w = rd.random() * 2 - 1
-        e = rd.random() * 2 - 1
-        r = rd.random() * 2 - 1
-        t = rd.random() * 2 - 1
-        y_ = rd.random() * 2 - 1
-        u = rd.random() * 2 - 1
-        i = rd.random() * 2 - 1
-        o = rd.random() * 2 - 1
-        p = rd.random() * 2 - 1
-        x.append(np.array([q,w,e,r,t,y_,u,i,o,p]))
-        y.append(fur(q,w,e,r,t,y_,u,i,o,p))
-
-    np.save('X',np.array(x))
-    np.save('Y',np.array(y))
-    print('done')
-
-
-
 if __name__=='__main__':
-
-    # genaret_data(5000)
 
     X=np.load('X.npy')
     Y=np.load('Y.npy')
@@ -296,13 +266,13 @@ if __name__=='__main__':
     if cate!='val' and cate!='id3' and cate!='c4.4':
         print('cate error')
     else:
-        if not os.path.exists('model.'+cate):
+        if not os.path.exists('basemodel.'+cate) or (len(sys.argv)==3 and sys.argv[2]=='force'):
             dd=DessionTree('con',max_deep=15,cate=cate)
             dd.fit(x_train,y_train)
-            dd.save_model('model.'+cate)
+            dd.save_model('basemodel.'+cate)
 
         dd1=DessionTree()
-        dd1.load_model('model.'+cate)
+        dd1.load_model('basemodel.'+cate)
 
         y=dd1.predict(x_test)
         for idx,i in enumerate(y):
