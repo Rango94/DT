@@ -7,11 +7,11 @@ import math
 class DessionTree:
 
     def __init__(self,data_cate='con',cate='val',max_deep=6):
-        self.max_deep=max_deep
-        self.data_cate=data_cate
-        self.cate=cate
-        self.tree = Tree(0)
-        self.Dic=0
+        self.max_deep=max_deep  #最大深度
+        self.data_cate=data_cate    #数据类型是连续还是离散
+        self.cate=cate  #决策树类型，方差 还是信息增益 还是信息增益率
+        self.tree = Tree(0) #初始化一棵树
+        self.Dic=0  #一个辅助字典用于把连续的值切分为离散的值
 
     def fit(self,X,Y):
         if self.data_cate=='con' and self.cate!='val':
@@ -110,7 +110,7 @@ class DessionTree:
             return sum([(i-l_mean)*(i-l_mean) for i in left_y])+sum([(i-r_mean)*(i-r_mean) for i in right_y]),np.array(left_x),np.array(left_y),np.array(right_x),np.array(right_y)
         if self.cate=='id3':
             return -(self.Entropy(y)-((len(left_y)/len(y))*self.Entropy(left_y)+(len(right_y)/len(y))*self.Entropy(right_y))),np.array(left_x),np.array(left_y),np.array(right_x),np.array(right_y)
-        if self.cate=='c4.4':
+        if self.cate=='c4.5':
             E=self.Entropy(y)
             return -((E-(len(left_y)/len(y)*self.Entropy(left_y)+len(right_y)/len(y)*self.Entropy(right_y)))/E),np.array(left_x),np.array(left_y),np.array(right_x),np.array(right_y)
 
@@ -263,7 +263,7 @@ if __name__=='__main__':
     import os
 
     cate=sys.argv[1]
-    if cate!='val' and cate!='id3' and cate!='c4.4':
+    if cate!='val' and cate!='id3' and cate!='c4.5':
         print('cate error')
     else:
         if not os.path.exists('basemodel.'+cate) or (len(sys.argv)==3 and sys.argv[2]=='force'):
