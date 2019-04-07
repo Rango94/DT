@@ -14,10 +14,17 @@ class DessionTree:
         self.Dic=0  #一个辅助字典用于把连续的值切分为离散的值
 
     def fit(self,X,Y):
+        self.feature_len = len(X[0])
+        print('建立分裂点')
+        self.split_the_X(X)
+        print('建立完毕')
         if self.data_cate=='con' and self.cate!='val':
+            print('将回归问题离散化')
             Y=self.dis_the_con(Y)
-        self.Split(self.tree,X,Y)
+            print('离散化完毕')
+        self.Split(self.tree,X,Y,'#')
 
+    #将连续的y值离散化，因为id3和c4.5只能做分类不能做回归。
     def dis_the_con(self,Y):
         max_ = np.max(Y)
         min_ = np.min(Y)
@@ -37,60 +44,92 @@ class DessionTree:
                         # print(Y[idx],end='\t')
                         Y[idx] = self.Dic[key][0]
                         # print(Y[idx])
-
         # for i in Y:
             # print(i)
-
         return Y
 
-    def Split(self,tree,X,Y):
+    def Split_bak(self,tree,X,Y):
         if tree.deep<=self.max_deep and np.var(Y)!=0 and X!=[]:
-            self.feature_len = len(X[0])
             best_idx = 0
             best_point = 0
-            best_s = 9999999999999
-            x_l = []
-            y_l = []
-            x_r = []
-            y_r = []
+            best_value = 9999999999999
+            x_left = []
+            y_left = []
+            x_right = []
+            y_right = []
             for i in range(self.feature_len):
-                # print(i)
-                feature_sort = [np.min(X[:, i]),np.max(X[:,i])]
-                split_point=[feature_sort[0]+k*(feature_sort[1]-feature_sort[0])/50 for k in range(1,49)]
-                # print(feature_sort)
-                # print(split_point)
-                for p in split_point:
-                    try:
-                        now_s ,x1,y1,x2,y2= self.cont(X, Y, i, p)
-                    except:
-                        now_s=best_s
-                    if best_s > now_s:
-                        best_s = now_s
+                # feature_sort = [np.min(X[:, i]),np.max(X[:,i])]
+                # split_point=[feature_sort[0]+k*(feature_sort[1]-feature_sort[0])/50 for k in range(1,49)]
+                for p in self.X_point_dic[i]:
+                    value ,x1,y1,x2,y2= self.select_the_point(X, Y, i, p)
+                    if best_value > value:
+                        best_value = value
                         best_idx = i
                         best_point = p
-                        x_l=x1
-                        y_l=y1
-                        x_r=x2
-                        y_r=y2
-            if y_r==[] or y_l==[]:
+                        x_left=x1
+                        y_left=y1
+                        x_right=x2
+                        y_right=y2
+
+            if y_right==[] or y_left==[]:
                 tree.set_value(np.mean(Y))
                 tree.value_x = X
                 tree.value_y = Y
                 return tree
+
             tree.idx=best_idx
             tree.point=best_point
             l_tree=Tree(tree.deep+1)
             r_tree=Tree(tree.deep+1)
-            # print(best_point)
-            tree.set_node('left',self.Split(l_tree,x_l,y_l))
-            tree.set_node('right', self.Split(r_tree, x_r, y_r))
+            tree.set_node('left',self.Split(l_tree,x_left,y_left))
+            tree.set_node('right', self.Split(r_tree, x_right, y_right))
         else:
             tree.set_value(np.mean(Y))
             tree.value_x=X
             tree.value_y=Y
         return tree
 
-    def cont(self, x, y, IDX, point):
+    def Split(self, tree, X, Y,route):
+        if tree.deep <= self.max_deep:
+            best_idx = 0
+            best_point = 0
+            best_value = 9999999999999
+            x_left = []
+            y_left = []
+            x_right = []
+            y_right = []
+            for i in range(self.feature_len):
+                # feature_sort = [np.min(X[:, i]),np.max(X[:,i])]
+                # split_point=[feature_sort[0]+k*(feature_sort[1]-feature_sort[0])/50 for k in range(1,49)]
+                for p in self.X_point_dic[i]:
+                    value, x1, y1, x2, y2 = self.select_the_point(X, Y, i, p)
+                    if best_value > value:
+                        best_value = value
+                        best_idx = i
+                        best_point = p
+                        x_left = x1
+                        y_left = y1
+                        x_right = x2
+                        y_right = y2
+            if y_right.size==0 or y_left.size==0:
+                tree.set_value(np.mean(Y))
+                tree.value_x = X
+                tree.value_y = Y
+                return tree
+            tree.idx = best_idx
+            tree.point = best_point
+            l_tree = Tree(tree.deep + 1)
+            r_tree = Tree(tree.deep + 1)
+            print('节点深度%d'%tree.deep,'节点路径%s'%route,'分裂特征索引%d'%best_idx,'分裂值%0.6f'%best_point)
+            tree.set_node('left', self.Split(l_tree, x_left, y_left,route+'0'))
+            tree.set_node('right', self.Split(r_tree, x_right, y_right,route+'1'))
+        else:
+            tree.set_value(np.mean(Y))
+            tree.value_x = X
+            tree.value_y = Y
+        return tree
+
+    def select_the_point(self, x, y, IDX, point):
         left_y=[]
         right_y=[]
         left_x=[]
@@ -103,16 +142,28 @@ class DessionTree:
                 right_y.append(y[idx])
                 right_x.append(i)
         if right_y==[] or left_y==[]:
-            return 0
+            return 9999999999999,np.array([]),np.array([]),np.array([]),np.array([])
         if self.cate=='val':
             l_mean = np.mean(left_y)
             r_mean = np.mean(right_y)
-            return sum([(i-l_mean)*(i-l_mean) for i in left_y])+sum([(i-r_mean)*(i-r_mean) for i in right_y]),np.array(left_x),np.array(left_y),np.array(right_x),np.array(right_y)
+            return sum([(i-l_mean)*(i-l_mean) for i in left_y])+sum([(i-r_mean)*(i-r_mean) for i in right_y]),\
+                   np.array(left_x),\
+                   np.array(left_y),\
+                   np.array(right_x),\
+                   np.array(right_y)
         if self.cate=='id3':
-            return -(self.Entropy(y)-((len(left_y)/len(y))*self.Entropy(left_y)+(len(right_y)/len(y))*self.Entropy(right_y))),np.array(left_x),np.array(left_y),np.array(right_x),np.array(right_y)
+            return -(self.Entropy(y)-((len(left_y)/len(y))*self.Entropy(left_y)+(len(right_y)/len(y))*self.Entropy(right_y))),\
+                   np.array(left_x),\
+                   np.array(left_y),\
+                   np.array(right_x),\
+                   np.array(right_y)
         if self.cate=='c4.5':
             E=self.Entropy(y)
-            return -((E-(len(left_y)/len(y)*self.Entropy(left_y)+len(right_y)/len(y)*self.Entropy(right_y)))/E),np.array(left_x),np.array(left_y),np.array(right_x),np.array(right_y)
+            return -((E-(len(left_y)/len(y)*self.Entropy(left_y)+len(right_y)/len(y)*self.Entropy(right_y)))/E),\
+                   np.array(left_x),\
+                   np.array(left_y),\
+                   np.array(right_x),\
+                   np.array(right_y)
 
     def Entropy(self,y):
         dic = {}
@@ -123,6 +174,14 @@ class DessionTree:
                 dic[i]=1
         total=sum([dic[i] for i in dic])
         return -sum([(dic[i]/total)*math.log(dic[i]/total) for i in dic])
+
+
+    def split_the_X(self,X,scale=50):
+        self.X_point_dic={}
+        for i in range(self.feature_len):
+            feature_sort = [np.min(X[:, i]), np.max(X[:, i])]
+            self.X_point_dic[i]=[feature_sort[0] + k * (feature_sort[1] - feature_sort[0]) / scale for k in range(1, scale-1)]
+
 
     def sort(self,x):
         if len(x)>1:
@@ -267,17 +326,17 @@ if __name__=='__main__':
         print('cate error')
     else:
         if not os.path.exists('basemodel.'+cate) or (len(sys.argv)==3 and sys.argv[2]=='force'):
-            dd=DessionTree('con',max_deep=15,cate=cate)
+            dd=DessionTree('con',max_deep=6,cate=cate)
             dd.fit(x_train,y_train)
             dd.save_model('basemodel.'+cate)
 
         dd1=DessionTree()
         dd1.load_model('basemodel.'+cate)
 
-        y=dd1.predict(x_test)
-        for idx,i in enumerate(y):
-            print(i,y_test[idx])
-        print(np.mean((y-y_test)*(y-y_test)))
+        # y=dd1.predict(x_test)
+        # for idx,i in enumerate(y):
+        #     print(i,y_test[idx])
+        # print(np.mean((y-y_test)*(y-y_test)))
 
 
 
