@@ -99,8 +99,6 @@ class DessionTree:
             x_right = []
             y_right = []
             for i in range(self.feature_len):
-                # feature_sort = [np.min(X[:, i]),np.max(X[:,i])]
-                # split_point=[feature_sort[0]+k*(feature_sort[1]-feature_sort[0])/50 for k in range(1,49)]
                 for p in self.X_point_dic[i]:
                     value, x1, y1, x2, y2 = self.select_the_point(X, Y, i, p)
                     if best_value > value:
@@ -120,7 +118,7 @@ class DessionTree:
             tree.point = best_point
             l_tree = Tree(tree.deep + 1)
             r_tree = Tree(tree.deep + 1)
-            print('节点深度%d'%tree.deep,'节点路径%s'%route,'分裂特征索引%d'%best_idx,'分裂值%0.6f'%best_point)
+            print('\t'.join(['节点深度%d'%tree.deep,'节点路径%s'%route,'分裂特征索引%d'%best_idx,'分裂值%0.6f'%best_point]))
             tree.set_node('left', self.Split(l_tree, x_left, y_left,route+'0'))
             tree.set_node('right', self.Split(r_tree, x_right, y_right,route+'1'))
         else:
@@ -152,14 +150,15 @@ class DessionTree:
                    np.array(right_x),\
                    np.array(right_y)
         if self.cate=='id3':
-            return -(self.Entropy(y)-((len(left_y)/len(y))*self.Entropy(left_y)+(len(right_y)/len(y))*self.Entropy(right_y))),\
+            E = self.Entropy(y)
+            return (len(left_y)/len(y))*self.Entropy(left_y)+(len(right_y)/len(y))*self.Entropy(right_y)-E,\
                    np.array(left_x),\
                    np.array(left_y),\
                    np.array(right_x),\
                    np.array(right_y)
         if self.cate=='c4.5':
-            E=self.Entropy(y)
-            return -((E-(len(left_y)/len(y)*self.Entropy(left_y)+len(right_y)/len(y)*self.Entropy(right_y)))/E),\
+            E = self.Entropy(y)
+            return (len(left_y)/len(y)*self.Entropy(left_y)+len(right_y)/len(y)*self.Entropy(right_y)-E)/E,\
                    np.array(left_x),\
                    np.array(left_y),\
                    np.array(right_x),\
@@ -314,29 +313,30 @@ if __name__=='__main__':
 
     X=np.load('X.npy')
     Y=np.load('Y.npy')
-    x_test=X[:1000]
-    y_test=Y[:1000]
-    x_train=X[1000:]
-    y_train=Y[1000:]
+    x_test=X[:500]
+    y_test=Y[:500]
+    x_train=X[1500:]
+    y_train=Y[1500:]
     import sys
     import os
+    cate='c4.5'
+    # if cate!='val' and cate!='id3' and cate!='c4.5':
+    #     print('cate error')
+    #
+    # else:
+    # if not os.path.exists('basemodel.'+cate) or (len(sys.argv)==3 and sys.argv[2]=='force'):
+    dd=DessionTree('con',max_deep=6,cate=cate)
+    dd.fit(x_train,y_train)
+    dd.save_model('basemodel.'+cate)
 
-    cate=sys.argv[1]
-    if cate!='val' and cate!='id3' and cate!='c4.5':
-        print('cate error')
-    else:
-        if not os.path.exists('basemodel.'+cate) or (len(sys.argv)==3 and sys.argv[2]=='force'):
-            dd=DessionTree('con',max_deep=6,cate=cate)
-            dd.fit(x_train,y_train)
-            dd.save_model('basemodel.'+cate)
+    dd1=DessionTree()
+    dd1.load_model('basemodel.'+cate)
 
-        dd1=DessionTree()
-        dd1.load_model('basemodel.'+cate)
-
-        # y=dd1.predict(x_test)
-        # for idx,i in enumerate(y):
-        #     print(i,y_test[idx])
-        # print(np.mean((y-y_test)*(y-y_test)))
+    y=dd1.predict(x_test)
+    for idx,i in enumerate(y):
+        if rd.random()>0.8:
+            print(i,y_test[idx])
+    print(np.mean((y-y_test)*(y-y_test)))
 
 
 
