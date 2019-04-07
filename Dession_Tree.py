@@ -118,7 +118,7 @@ class DessionTree:
             tree.point = best_point
             l_tree = Tree(tree.deep + 1)
             r_tree = Tree(tree.deep + 1)
-            print('\t'.join(['节点深度%d'%tree.deep,'节点路径%s'%route,'分裂特征索引%d'%best_idx,'分裂值%0.6f'%best_point]))
+            print('\t\t'.join(['节点深度%d'%tree.deep,'节点路径%s'%route,'分裂特征索引%d'%best_idx,'分裂值%0.6f'%best_point]))
             tree.set_node('left', self.Split(l_tree, x_left, y_left,route+'0'))
             tree.set_node('right', self.Split(r_tree, x_right, y_right,route+'1'))
         else:
