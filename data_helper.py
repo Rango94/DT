@@ -9,10 +9,9 @@ def _fur(q, w, e, r, t, y, u, i, o, p, chaos):
     return q*q*q*0.4+w*w*0.1+e*0.2+r*r*r*r*-0.7+t+y*y*0.9+u*u*u*0.4+i*0.5+o*0.4*i*p*0.3+p*p
 
 def genaret_data(num,chaos=False):
-    if chaos==0:
-        return 0
     x=[]
     y=[]
+    print(num)
     for k in range(num):
         q=rd.random()*2-1
         w = rd.random() * 2 - 1
@@ -26,7 +25,6 @@ def genaret_data(num,chaos=False):
         p = rd.random() * 2 - 1
         x.append(np.array([q,w,e,r,t,y_,u,i,o,p]))
         y.append(_fur(q, w, e, r, t, y_, u, i, o, p,chaos))
-
     np.save('X',np.array(x))
     np.save('Y',np.array(y))
     print('done')
